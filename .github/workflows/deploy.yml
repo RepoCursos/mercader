@@ -42,7 +42,7 @@ jobs:
         FTP_HOST: ${{ secrets.FTP_HOST }}
         FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
         FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        FTP_DESTINATION: htdocs/ #${{ secrets.FTP_DESTINATION }}
+        FTP_DESTINATION: ${{ secrets.FTP_DESTINATION }}
       run: |
         php artisan config:cache
 
