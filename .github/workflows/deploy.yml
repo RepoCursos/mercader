@@ -1,0 +1,60 @@
+name: Deploy Laravel Application
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    steps:
+    
+    - name: Checkout del código del repositorio
+      uses: actions/checkout@v2
+
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, bcmath, sqlite, gd, curl
+    # Extensiones necesarias en Laravel
+
+    - name: Copy .env
+      run: |
+        cp .env.example .env
+ 
+    - name: Instalar dependencias de Composer
+      run: |
+        curl -sS https://getcomposer.org/installer | php
+        php composer.phar install --no-dev --optimize-autoloader
+
+    - name: Permisos para storage y bootstrap/cache
+      run: |
+        chmod 775 -R storage bootstrap/cache
+
+    - name: Configurar env de Laravel
+      env:
+        FTP_HOST: ${{ secrets.FTP_HOST }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        FTP_DESTINATION: /htdocs  #${{ secrets.FTP_DESTINATION }}
+      run: |
+        php artisan config:cache
+
+    - name: Subir al servidor GoogieHost via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.0.0
+      with:
+         server: ${{ secrets.FTP_HOST }}
+         username: ${{ secrets.FTP_USERNAME }}
+         password: ${{ secrets.FTP_PASSWORD }}
+         server-dir: ${{ secrets.FTP_DESTINATION }}
+ 
+    - name: Ejecutar comandos de Laravel post-deployment
+      run: |
+        php artisan migrate --force
+        php artisan db:seed --force
